@@ -51,7 +51,7 @@ class FreeDSender:
             while run.is_set():
                 data = self.queue.recv_bytes()
                 if self.interceptor:
-                    self.interceptor.position(data)
+                    data = self.interceptor.position(data)
                 try:
                     _ = {executor.submit(s.send, data): s for s in self.sockets}
                 except Exception as e:
@@ -60,18 +60,27 @@ class FreeDSender:
 
 
 class FreedInterceptor:
-    def __init__(self, data_source):
-        self.queue = deque(data_source) # to fix
+    def __init__(self, queue):
+        self.queue = queue
         self.last_values = 0
 
     def position(self, freed_data):
         try:
-            print(self.queue.pop())
-        except Exception as e:
-            print(e)
-        # try:
-        #     values = self.queue.pop()
-        # except IndexError:
-        #     values = self.last_values
-        # self.last_values = values
-        # return freed_data[:11] + values + freed_data[20:]
+            values = self.queue.pop()
+        except IndexError:
+            values = self.last_values
+        self.last_values = values
+        values = b'\xff\xee\x0f'
+        return freed_data[:11] + values + freed_data[20:]
+
+
+class RTTrPMPosition:
+    def __init__(self):
+        self.queue = deque(self.get_position())
+
+    def get_position(self):
+        return []
+
+    def scale_position(self, pos):
+        pos = int(pos * 64)
+        return pos.to_bytes(3, 'big')

@@ -1,8 +1,8 @@
 #!/bin/env python3
 import threading
 from time import sleep
-from freed import FreeDSender, FreeDReceiver, FreedInterceptor
-from rttrpm import RTTrPMPosition
+from freed import FreeDSender, FreeDReceiver, FreedInterceptor, RTTrPMPosition
+# from rttrpm import RTTrPMPosition
 
 
 def freed_forward(recv_port, destinations):
@@ -22,7 +22,7 @@ def freed_intercept(recv_port, destinations):
     receiver = FreeDReceiver(recv_port)
     run.set()
     position = RTTrPMPosition()
-    interceptor = FreedInterceptor(position.to_freed)
+    interceptor = FreedInterceptor(position.queue)
     recv_thread = threading.Thread(None, receiver.receive, None, (run,))
     sender = FreeDSender(destinations, receiver.queue, interceptor)
     send_thread = threading.Thread(None, sender.send, None, (run,))
