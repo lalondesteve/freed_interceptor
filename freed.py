@@ -15,6 +15,7 @@ from time import sleep
 # 28 = 0 pad / checksum
 # zoom + focus = 1365 to 4095 int
 # pan, tilt = -175...+175
+# checksum = 0x40 - sum(packet) &0xff
 
 
 class FreeDReceiver:
@@ -29,6 +30,7 @@ class FreeDReceiver:
         while run.is_set():
             data = self.sock.recv(65535)
             self.pipe.send_bytes(data)
+        self.sock.close()
 
 
 class FreeDSender:
@@ -52,11 +54,13 @@ class FreeDSender:
                 data = self.queue.recv_bytes()
                 if self.interceptor:
                     data = self.interceptor.position(data)
+                # print('sent data: ', data)
                 try:
                     _ = {executor.submit(s.send, data): s for s in self.sockets}
                 except Exception as e:
                     print(e)
                     break
+        [s.close() for s in self.sockets]
 
 
 class FreedInterceptor:
@@ -70,5 +74,9 @@ class FreedInterceptor:
         except IndexError:
             values = self.last_values
         self.last_values = values
-        # values = b'\xff\xee\x0f'
-        return freed_data[:11] + values + freed_data[20:]
+        data = freed_data[:11] + self.last_values + freed_data[20:]
+        return self.freed_cs(data)
+
+    @staticmethod
+    def freed_cs(data):
+        return data[:28] + ((0x40 - sum(data[:28]) & 0xff).to_bytes(1, 'big'))

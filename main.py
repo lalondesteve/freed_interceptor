@@ -34,7 +34,7 @@ def freed_intercept(recv_port, destinations):
 
 if __name__ == '__main__':
     recv_port = 1113
-    send_ip = '10.200.1.107'
+    send_ip = '10.200.11.182'
     send_port = 12345
     # run = freed_forward(recv_port, [(send_ip, send_port)])
     run = freed_intercept(recv_port, [(send_ip, send_port)])
