@@ -11,7 +11,11 @@ def filter_packet(data, int_sig, float_sig, pos=True):
     timestamp = num_mods = None
     big = ''
     led = led_acc_vel = []
-    pkt_type = data[0]
+    try:
+        pkt_type = data[0]
+    except IndexError:
+        print('filter packet error : pkt_type')
+        return None
     # trackable
     if hex(int_sig) == '0x4154':
         # big endian
@@ -40,7 +44,8 @@ def filter_packet(data, int_sig, float_sig, pos=True):
     # centroid
     i_big = f_big = ""
     if data[0] != 2:
-        raise ValueError(data[0])
+        print(ValueError(data[0]))
+        print(trackable['name'])
     if int_sig == "0x4154":
         i_big = "!"
     c_size, c_latency = struct.unpack(f"{i_big}HH", data[1:5])
@@ -57,12 +62,12 @@ def filter_packet(data, int_sig, float_sig, pos=True):
         'y': y,
         'z': z
     }
+    # print('centroid', centroid)
     if pos:
         return x, y, z
     else:
         return trackable, centroid
     # data = data[size:]
-    # print('centroid', centroid)
 
 
 def get_trackables():
@@ -80,7 +85,7 @@ def get_trackables():
 
 def rttrpm_to_freed(pos):
     # rttrpm = meters vs freed = 1/64th mm
-    return (int(pos*640000) & 0xffffff).to_bytes(3, 'big')
+    return (int(pos*64000) & 0xffffff).to_bytes(3, 'big')
 
 
 queue = deque([], maxlen=1)
@@ -95,12 +100,13 @@ def recv(to_freed=True):
         sock.close()
     else:
         r = rttrp.RTTrP(data)
-        position = filter_packet(r.data, r.intHeader, r.fltHeader)
-        if to_freed:
-            freed_pos = b''.join(rttrpm_to_freed(x) for x in position)
-            queue.append(freed_pos)
-        else:
-            queue.append(position)
+        if position := filter_packet(r.data, r.intHeader, r.fltHeader):
+            if to_freed:
+                freed_pos = b''.join(rttrpm_to_freed(x) for x in position)
+                # print(freed_pos)
+                queue.append(freed_pos)
+            else:
+                queue.append(position)
 
 
 def freed_to_float(data):
