@@ -46,3 +46,4 @@ if __name__ == '__main__':
             print('KeyboardInterrupt')
         except Exception as e:
             print(e)
+            run.clear()

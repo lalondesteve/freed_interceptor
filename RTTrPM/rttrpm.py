@@ -1,10 +1,12 @@
 import struct
 from RTTrPM import rttrp
+# import rttrp
 import socket
 from collections import deque
+from time import time
 
 
-def filter_packet(data, int_sig, float_sig):
+def filter_packet(data, int_sig, float_sig, pos=True):
     trackable = centroid = quaternon = euler = centroid_acc_vel = None
     timestamp = num_mods = None
     big = ''
@@ -55,19 +57,30 @@ def filter_packet(data, int_sig, float_sig):
         'y': y,
         'z': z
     }
-    return x, y, z
+    if pos:
+        return x, y, z
+    else:
+        return trackable, centroid
     # data = data[size:]
     # print('centroid', centroid)
 
 
+def get_trackables():
+    names = []
+    start_time = time()
+    end_time = time()
+    while end_time - start_time < 10:
+        data = recv()
+        r = rttrp.RTTrP(data)
+        trackable, centroid = filter_packet(r.data, r.intHeader, r.fltHeader, pos=False)
+        print(trackable)
+        names.append[trackable['name']]
+    print(names)
+
+
 def rttrpm_to_freed(pos):
     # rttrpm = meters vs freed = 1/64th mm
-    arr = [0]*3
-    r = int(pos * 1000 * 64)
-    arr[0] = r & 0x00ff
-    arr[1] = r >> 8 & 0x00ff
-    arr[2] = r >> 16 & 0x00ff
-    return b''.join([x.to_bytes(1, 'big') for x in arr])
+    return (int(pos*640000) & 0xffffff).to_bytes(3, 'big')
 
 
 queue = deque([], maxlen=1)
@@ -75,7 +88,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('', 24100))
 
 
-def recv():
+def recv(to_freed=True):
     try:
         data = sock.recv(65535)
     except KeyboardInterrupt:
@@ -83,8 +96,22 @@ def recv():
     else:
         r = rttrp.RTTrP(data)
         position = filter_packet(r.data, r.intHeader, r.fltHeader)
-        freed_pos = b''.join(rttrpm_to_freed(x) for x in position)
-        queue.append(freed_pos)
+        if to_freed:
+            freed_pos = b''.join(rttrpm_to_freed(x) for x in position)
+            queue.append(freed_pos)
+        else:
+            queue.append(position)
+
+
+def freed_to_float(data):
+    # 24 bit to int
+    r = ((data[0] << 16) | (data[1] << 8) | data[2]) - 0xffffff
+    # int to signed
+    if not r & 0x800000:
+        return r & 0xffffff
+    else:
+        return r
+
 
 
 def recv_loop(run):
@@ -95,4 +122,6 @@ def recv_loop(run):
 if __name__ == '__main__':
     while True:
         recv()
-        print(queue.pop())
+        freed, pos = queue.pop()
+        print(freed[:3])
+
