@@ -62,7 +62,7 @@ class FreeDSender:
 class FreedInterceptor:
     def __init__(self, queue):
         self.queue = queue
-        self.last_values = 0
+        self.last_values = b'\x00\x00\x00'*3
 
     def position(self, freed_data):
         try:
@@ -70,17 +70,5 @@ class FreedInterceptor:
         except IndexError:
             values = self.last_values
         self.last_values = values
-        values = b'\xff\xee\x0f'
+        # values = b'\xff\xee\x0f'
         return freed_data[:11] + values + freed_data[20:]
-
-
-class RTTrPMPosition:
-    def __init__(self):
-        self.queue = deque(self.get_position())
-
-    def get_position(self):
-        return []
-
-    def scale_position(self, pos):
-        pos = int(pos * 64)
-        return pos.to_bytes(3, 'big')
