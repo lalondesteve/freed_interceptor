@@ -1,7 +1,7 @@
 #!/bin/env python3
 import threading
 from time import sleep
-from freed import FreeDSender, FreeDReceiver, FreedInterceptor
+from FreeD import FreeDSender, FreeDReceiver, FreeDInterceptor
 import RTTrPM
 
 
@@ -21,7 +21,7 @@ def freed_intercept(recv_port, destinations):
     run = threading.Event()
     receiver = FreeDReceiver(recv_port)
     run.set()
-    interceptor = FreedInterceptor(RTTrPM.queue)
+    interceptor = FreeDInterceptor(RTTrPM.queue)
     rttrpm_thread = threading.Thread(None, RTTrPM.recv_loop, None, (run,))
     recv_thread = threading.Thread(None, receiver.receive, None, (run,))
     sender = FreeDSender(destinations, receiver.queue, interceptor)
