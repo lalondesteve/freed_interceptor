@@ -6,6 +6,8 @@ from collections import deque
 from time import time
 
 
+
+
 def filter_packet(data, int_sig, float_sig, pos=True):
     trackable = centroid = quaternon = euler = centroid_acc_vel = None
     timestamp = num_mods = None
@@ -117,7 +119,6 @@ def freed_to_float(data):
         return r & 0xffffff
     else:
         return r
-
 
 
 def recv_loop(run):
