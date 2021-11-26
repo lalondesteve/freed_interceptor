@@ -7,6 +7,6 @@
 # zoom + focus = 1365 to 4095 int
 # pan, tilt = -175...+175
 # checksum = 0x40 - sum(packet) &0xff
-from interceptor import FreeDInterceptor
-from sender import FreeDSender
-from receiver import FreeDReceiver
+from FreeD.interceptor import FreeDInterceptor
+from FreeD.sender import FreeDSender
+from FreeD.receiver import FreeDReceiver
